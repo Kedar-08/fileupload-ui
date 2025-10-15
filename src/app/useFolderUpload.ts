@@ -51,9 +51,7 @@ export function useFolderUpload() {
     const commonDir = getCommonDir(relDirs); // e.g. "MyFolder" or "MyFolder/subdir"
 
     // Friendly label (top-level folder name)
-    const label = commonDir
-      ? commonDir.split("/")[0] + "/"
-      : "selected-folder/";
+    const label = commonDir ? commonDir.split("/")[0] + "/" : "selected-folder/";
 
     setFiles(arr);
     setDisplayPath(label);
@@ -82,31 +80,40 @@ export function useFolderUpload() {
       return;
     }
 
+    // Ensure we actually have a folderPath string to send
+    let pathToSend = folderPath;
+    if (!pathToSend) {
+      // Fallback: try to derive from the first file's relative path
+      const rel = (files[0] as any).webkitRelativePath as string | undefined;
+      if (rel && rel.includes("/")) {
+        pathToSend = rel.slice(0, rel.indexOf("/")); // top-level folder
+        setFolderPath(pathToSend);
+      } else {
+        setApiState("error");
+        setErrorMsg(
+          "Browser did not provide a relative folder path. Try using Chrome/Edge or reselect the folder."
+        );
+        return;
+      }
+    }
+
     setApiState("loading");
     setErrorMsg("");
     setResponseJson(null);
     setHttpStatus("");
 
     try {
-      const form = new FormData();
-
-      // Send the folder's full relative path as the backend expects
-      if (folderPath) {
-        form.append("folderpath", folderPath); // ← key name matches backend convention
-      }
-
-      // Send all files with their relative paths so backend can rebuild tree
-      for (const f of files) {
-        const rel = (f as any).webkitRelativePath as string | undefined;
-        form.append("files", f, rel || f.name);
-      }
-
       const controller = new AbortController();
       const t = setTimeout(() => controller.abort(), API_TIMEOUT_MS);
 
-      const res = await fetch(`${API_BASE}${PROCESS_PATH}`, {
-        method: "POST",
-        body: form,
+      // Build GET URL with ?folderpath=<relative>
+      const url =
+        `${API_BASE}${PROCESS_PATH}?` +
+        new URLSearchParams({ folderpath: pathToSend }).toString();
+
+      const res = await fetch(url, {
+        method: "GET",
+        headers: { Accept: "application/json" },
         signal: controller.signal,
       }).finally(() => clearTimeout(t));
 
@@ -116,13 +123,9 @@ export function useFolderUpload() {
       const isJson = ct.includes("application/json");
 
       if (!res.ok) {
-        const body = isJson
-          ? await res.json().catch(() => ({}))
-          : await res.text();
+        const body = isJson ? await res.json().catch(() => ({})) : await res.text();
         setApiState("error");
-        setErrorMsg(
-          typeof body === "string" ? body : JSON.stringify(body, null, 2)
-        );
+        setErrorMsg(typeof body === "string" ? body : JSON.stringify(body, null, 2));
         return;
       }
 
@@ -132,9 +135,7 @@ export function useFolderUpload() {
     } catch (err: any) {
       setApiState("error");
       setErrorMsg(
-        err?.name === "AbortError"
-          ? "Request timed out"
-          : err?.message || "Network error"
+        err?.name === "AbortError" ? "Request timed out" : err?.message || "Network error"
       );
     }
   }
