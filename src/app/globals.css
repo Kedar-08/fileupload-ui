@@ -24,3 +24,42 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+@layer utilities {
+  .bg-background {
+    background-color: var(--background);
+  }
+  .text-foreground {
+    color: var(--foreground);
+  }
+}
+
+@layer components {
+  .fu-wrapper { @apply min-h-dvh bg-background text-foreground; }
+  .fu-header { @apply border-b; }
+  .fu-header-inner { @apply mx-auto max-w-5xl p-4; }
+  .fu-title { @apply text-2xl font-bold; }
+  .fu-subtitle { @apply opacity-70 text-sm; }
+  .fu-main { @apply mx-auto max-w-5xl p-4 space-y-6; }
+
+  .fu-card { @apply rounded-2xl border p-4; }
+  .fu-row { @apply grid gap-3 md:grid-cols-[1fr_auto_auto_auto] items-center; }
+
+  .fu-pathbox { @apply flex items-center rounded-xl border px-3 py-2 min-h-12; }
+  .fu-pathtext { @apply truncate; }
+  .fu-pathtext-empty { @apply truncate opacity-50; }
+  .fu-pathmeta { @apply text-xs opacity-70; }
+
+  .fu-btn { @apply rounded-xl border px-4 py-2 min-h-12; }
+  .fu-btn-disabled { @apply rounded-xl border px-4 py-2 min-h-12 disabled:opacity-50; }
+
+  .fu-status { @apply mt-3 flex flex-wrap items-center gap-2; }
+  .fu-pill { @apply inline-flex items-center rounded-full border px-3 py-1 text-sm; }
+
+  .fu-response-head { @apply mb-2 flex items-center justify-between; }
+  .fu-actions { @apply flex items-center gap-2; }
+
+  .fu-pre { @apply rounded-xl border p-3 overflow-auto text-sm min-h-40 max-h-[75vh] resize-y; }
+
+  .fu-hidden { @apply hidden; }
+}
